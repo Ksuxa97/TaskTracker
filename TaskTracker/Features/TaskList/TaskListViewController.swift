@@ -18,6 +18,22 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
         return tableView
     }()
 
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .systemGray
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+
+    private let loadingView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemBackground
+        view.isHidden = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -30,11 +46,16 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupLoadingView()
+        presenter.updateTaskList()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        //presenter.updateTaskList()
+        presenter.updateTaskList()
+    }
+
+    func updateView() {
         tableView.reloadData()
     }
 
@@ -66,22 +87,19 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
             target: self,
             action: #selector(addButtonTapped)
         )
+        navigationItem.backButtonDisplayMode = .minimal
+        navigationItem.backButtonTitle = "" 
     }
 }
 
 // MARK: Navigation to other views
 extension TaskListViewController {
-
     @objc private func addButtonTapped() {
-        // переход на экран добавления
-
-        //present(actionSheet, animated: true)
+        presenter.addButtonDidTap()
     }
-
 }
 
 // MARK: TableView operations
-
 extension TaskListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -114,11 +132,11 @@ extension TaskListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         let item = presenter.getItem(with: indexPath.row)
-        
+
         let attributedString = NSMutableAttributedString()
-        let title = NSAttributedString(string: item.name + "\n", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .medium)])
-        let description = NSAttributedString(string: item.description ?? "" + "\n", attributes: [.font: UIFont.systemFont(ofSize: 17, weight: .regular)])
-        let createdDate = NSAttributedString(string: item.createdAt.formatted(), attributes: [.font: UIFont.systemFont(ofSize: 15, weight: .light)])
+        let title = NSAttributedString(string: "\(item.name ?? "No name")\n", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .medium)])
+        let description = NSAttributedString(string: "\(item.taskDescription ?? "No description")\n", attributes: [.font: UIFont.systemFont(ofSize: 17, weight: .regular)])
+        let createdDate = NSAttributedString(string: "\(item.createdAt?.formatted() ?? "No open date")\n", attributes: [.font: UIFont.systemFont(ofSize: 15, weight: .light)])
         attributedString.append(title)
         attributedString.append(description)
         attributedString.append(createdDate)
@@ -133,5 +151,48 @@ extension TaskListViewController: UITableViewDataSource {
     func newTaskDidAdded() {
         presenter.updateTaskList()
         tableView.reloadData()
+    }
+}
+
+// MARK: Loader
+extension TaskListViewController {
+
+    private func setupLoadingView() {
+        view.addSubview(loadingView)
+        loadingView.addSubview(loadingIndicator)
+
+        NSLayoutConstraint.activate([
+            loadingView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            loadingView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+
+            loadingIndicator.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: loadingView.centerYAnchor, constant: -20)
+        ])
+    }
+
+    func showLoading() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            self.loadingView.isHidden = false
+            self.loadingIndicator.startAnimating()
+
+            self.tableView.isUserInteractionEnabled = false
+            self.navigationItem.rightBarButtonItem?.isEnabled = false
+        }
+    }
+
+    func hideLoading() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            self.loadingIndicator.stopAnimating()
+            self.loadingView.isHidden = true
+            
+            self.tableView.isUserInteractionEnabled = true
+            self.navigationItem.rightBarButtonItem?.isEnabled = true
+        }
     }
 }

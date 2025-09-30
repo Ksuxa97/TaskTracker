@@ -8,7 +8,7 @@
 import Foundation
 
 enum APIConstants {
-    static let baseURL: String = "https://dummyjson.com/todos"
+    static let baseURL: String = "https://dummyjson.com"
 }
 
 enum Endpoint {
@@ -36,7 +36,7 @@ enum NetworkError: Error {
 }
 
 final class NetworkService {
-    func request<T: Decodable>(url: URL, completion: @escaping (Result<T, Error>) -> Void) {
+    func request(url: URL, completion: @escaping (Result<ToDoListResponse, Error>) -> Void) {
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
@@ -56,7 +56,7 @@ final class NetworkService {
                 }
 
                 do {
-                    let decoded = try JSONDecoder().decode(T.self, from: data)
+                    let decoded = try JSONDecoder().decode(ToDoListResponse.self, from: data)
                     completion(.success(decoded))
                 } catch {
                     completion(.failure(error))

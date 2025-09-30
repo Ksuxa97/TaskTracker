@@ -11,17 +11,23 @@ protocol TaskListPresenterProtocol {
     func getItem(with index: Int) -> Task
     func updateTaskList()
     func didSelectTask(at index: Int)
+    func addButtonDidTap()
 }
 
-protocol TaskListInteractorProtocol: AnyObject {
+protocol TaskListInteractorProtocol {
+    func loadTasks(completion: @escaping ([Task]) -> Void)
+    //func loadData(completion: @escaping (Result<ToDoListResponse, Error>) -> Void)
 }
 
-protocol TaskListRouterProtocol: AnyObject {
-    func navigateToEditTask(from view: UIViewController, with task: Task)
+protocol TaskListRouterProtocol {
+    func navigateToTaskDetails(from view: UIViewController, with task: Task?)
+    func navigateToCreateTask(from view: UIViewController)
 }
 
 protocol TaskListViewControllerProtocol: AnyObject {
-
+    func updateView()
+    func showLoading()
+    func hideLoading()
 }
 
 protocol TaskAddedDelegate {

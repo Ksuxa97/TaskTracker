@@ -8,8 +8,69 @@ import Foundation
 
 final class TaskListInteractor: TaskListInteractorProtocol {
 
-    //реализация взятия данных с запросов или БД в методах, презентер из этих методов инициализирует список тасок
+    private var tasks: [Task] = []
+    private let networkService: NetworkService
 
-    init() {
+    init(networkService: NetworkService) {
+        self.networkService = networkService
+    }
+
+    func loadTasks(completion: @escaping ([Task]) -> Void) {
+
+        if StorageManager.shared.isEmpty() {
+            loadDataFromApi { result in
+                switch result {
+                case .success(let taskList):
+                    self.saveToCoreData(taskList: taskList.todos)
+                    self.loadFromCoreData() { taskList in
+                        completion(taskList)
+                    }
+
+                case .failure(let error):
+                    print("Error: \(error)")
+                    completion([])
+                }
+                return
+            }
+        } else {
+            self.loadFromCoreData(){ taskList in
+                completion(taskList)
+            }
+        }
+    }
+    private func saveToCoreData(taskList: [ToDo]) {
+        taskList.forEach { item in
+            StorageManager.shared.create(item) { task in
+                self.tasks.append(task)
+            }
+        }
+    }
+
+    private func loadDataFromApi(completion: @escaping (Result<ToDoListResponse, Error>) -> Void) {
+        guard let url = Endpoint.todos.url else {
+            completion(.failure(NetworkError.invalidURL))
+            return
+        }
+
+        networkService.request(url: url) { result in
+            switch result {
+                case .success(let response):
+                    completion(.success(response))
+                case .failure(let error):
+                    completion(.failure(error))
+            }
+        }
+    }
+
+    private func loadFromCoreData(completion: @escaping ([Task]) -> Void) {
+        StorageManager.shared.fetchData { result in
+            switch result {
+            case .success(let data):
+                completion(data)
+            case .failure(let error):
+                print("Error: \(error)")
+                completion([])
+            }
+        }
     }
 }
