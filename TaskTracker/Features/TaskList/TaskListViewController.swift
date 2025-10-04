@@ -6,9 +6,22 @@
 //
 
 import UIKit
+import CoreData
 
 final class TaskListViewController: UIViewController, TaskListViewControllerProtocol, TaskAddedDelegate {
+
     private let presenter: TaskListPresenterProtocol
+
+    private let searchBar: UISearchBar = {
+        let searchBar = UISearchBar()
+        searchBar.searchTextField.backgroundColor = .systemBackground
+        searchBar.placeholder = "Поиск"
+        searchBar.searchBarStyle = .minimal
+        searchBar.showsCancelButton = false
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        return searchBar
+    }()
+
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.rowHeight = UITableView.automaticDimension
@@ -63,6 +76,10 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
     private func setupUI() {
         title = "Список задач"
         view.backgroundColor = .systemBackground
+
+        searchBar.delegate = self
+        view.addSubview(searchBar)
+
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
@@ -72,7 +89,11 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            searchBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            searchBar.heightAnchor.constraint(equalToConstant: 44),
+            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 20),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
@@ -110,8 +131,7 @@ extension TaskListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let deleteAction = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
             guard let self else { return }
-//            self.presenter.deleteCosmeticRecord(at: indexPath.row)
-//            self.presenter.updateCosmeticList()
+            self.presenter.taskDidSwipe(with: indexPath.row)
             tableView.reloadData()
             completion(true)
         }
@@ -134,9 +154,9 @@ extension TaskListViewController: UITableViewDataSource {
         let item = presenter.getItem(with: indexPath.row)
 
         let attributedString = NSMutableAttributedString()
-        let title = NSAttributedString(string: "\(item.name ?? "No name")\n", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .medium)])
-        let description = NSAttributedString(string: "\(item.taskDescription ?? "No description")\n", attributes: [.font: UIFont.systemFont(ofSize: 17, weight: .regular)])
-        let createdDate = NSAttributedString(string: "\(item.createdAt?.formatted() ?? "No open date")\n", attributes: [.font: UIFont.systemFont(ofSize: 15, weight: .light)])
+        let title = NSAttributedString(string: "\(item.name)\n", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .medium)])
+        let description = NSAttributedString(string: "\(item.description ?? "No description")\n", attributes: [.font: UIFont.systemFont(ofSize: 17, weight: .regular)])
+        let createdDate = NSAttributedString(string: "\(item.createdAt.formatted())\n", attributes: [.font: UIFont.systemFont(ofSize: 15, weight: .light)])
         attributedString.append(title)
         attributedString.append(description)
         attributedString.append(createdDate)
@@ -148,9 +168,8 @@ extension TaskListViewController: UITableViewDataSource {
         return cell
     }
 
-    func newTaskDidAdded() {
+    func taskListDidChange() {
         presenter.updateTaskList()
-        tableView.reloadData()
     }
 }
 
@@ -194,5 +213,29 @@ extension TaskListViewController {
             self.tableView.isUserInteractionEnabled = true
             self.navigationItem.rightBarButtonItem?.isEnabled = true
         }
+    }
+}
+
+// MARK: SearchBar
+extension TaskListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        if let searchText = searchBar.text {
+            presenter.searchTask(by: searchText)
+            searchBar.resignFirstResponder()
+        }
+    }
+
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(true, animated: true)
+    }
+
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchBar.setShowsCancelButton(false, animated: true)
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
+        searchBar.resignFirstResponder()
+        searchBar.setShowsCancelButton(false, animated: true)
     }
 }

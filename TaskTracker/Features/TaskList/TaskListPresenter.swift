@@ -11,8 +11,8 @@ import UIKit
 final class TaskListPresenter: TaskListPresenterProtocol {
 
     weak var view: TaskListViewControllerProtocol?
-    var interactor: TaskListInteractorProtocol?
-    var router: TaskListRouterProtocol?
+    var interactor: TaskListInteractorProtocol
+    var router: TaskListRouterProtocol
 
     var numberOfItems: Int {
         return tasks.count
@@ -20,33 +20,47 @@ final class TaskListPresenter: TaskListPresenterProtocol {
 
     private var tasks: [Task] = []
 
+    init(interactor: TaskListInteractorProtocol, router: TaskListRouterProtocol) {
+        self.interactor = interactor
+        self.router = router
+    }
+
     func getItem(with index: Int) -> Task {
         return tasks[index]
     }
 
     func didSelectTask(at index: Int) {
-        guard let taskListVC = view as? UIViewController else { return }
-        if router == nil {
-            print("router is not initialized")
-        }
-        router?.navigateToTaskDetails(from: taskListVC, with: tasks[index])
+        router.navigateToTaskDetails(with: tasks[index])
     }
 
     func updateTaskList() {
         view?.showLoading()
-        interactor?.loadTasks() { [weak self] result in
+        interactor.loadTasks() { [weak self] result in
             guard let self else { return }
             self.tasks = result
 
-            DispatchQueue.main.async {
-                self.view?.hideLoading()
-                self.view?.updateView()
-            }
+            self.view?.hideLoading()
+            self.view?.updateView()
         }
     }
 
     func addButtonDidTap() {
-        guard let taskListVC = view as? UIViewController else { return }
-        router?.navigateToCreateTask(from: taskListVC)
+        router.navigateToCreateTask()
+    }
+
+    func taskDidSwipe(with index: Int) {
+        interactor.deleteTask(tasks[index]) {[weak self] result in
+            guard let self else { return }
+            self.tasks = result
+            self.view?.updateView()
+        }
+    }
+
+    func searchTask(by searchText: String) {
+        interactor.getTasks(with: searchText) {[weak self] result in
+            guard let self else { return }
+            self.tasks = result
+            self.view?.updateView()
+        }
     }
 }

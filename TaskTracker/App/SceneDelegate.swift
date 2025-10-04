@@ -15,14 +15,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-        let taskListPresenter = TaskListPresenter()
         let taskListRouter = TaskListRouter()
         let networkService = NetworkService()
-        let taskListInteractor = TaskListInteractor(networkService: networkService)
+        let apiService = DummyAPIService(networkService: networkService)
+        let taskListInteractor = TaskListInteractor(storage: StorageManager.shared, apiService: apiService)
+
+        let taskListPresenter = TaskListPresenter(interactor: taskListInteractor, router: taskListRouter)
         let taskListVC = TaskListViewController(presenter: taskListPresenter)
-        taskListPresenter.interactor = taskListInteractor
         taskListPresenter.view = taskListVC
-        taskListPresenter.router = taskListRouter
+        taskListRouter.view = taskListVC
+        
         window?.rootViewController = UINavigationController(rootViewController: taskListVC)
         window?.makeKeyAndVisible()
     }

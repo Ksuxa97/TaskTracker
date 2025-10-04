@@ -43,12 +43,16 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
 
     private let descriptionTextView: UITextView = {
         let textView = UITextView()
-        textView.layer.borderColor = UIColor.systemGray5.cgColor
-        textView.layer.borderWidth = 0.8
+        textView.font = UIFont.systemFont(ofSize: 16)
+        textView.layer.borderColor = UIColor.systemGray4.cgColor
+        textView.layer.borderWidth = 1
         textView.layer.cornerRadius = 8
         textView.textContainerInset = .init(top: 8, left: 8, bottom: 8, right: 8)
+        textView.returnKeyType = .done
         return textView
     }()
+
+    private var toolbar = UIToolbar()
 
     private let saveButton: UIButton = {
         let button = UIButton(type: .roundedRect)
@@ -57,6 +61,7 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         button.layer.cornerRadius = 8
         button.setTitle("Сохранить", for: .normal)
         button.isEnabled = false
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
 
@@ -64,6 +69,7 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         self.presenter = presenter
         super.init(nibName: nil, bundle: nil)
         self.title = title
+        setupInputAccessory()
     }
 
     required init?(coder: NSCoder) {
@@ -80,6 +86,9 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
 
         nameTextField.text = taskName
         descriptionTextView.text = taskDescription
+        descriptionTextView.delegate = self
+        nameTextField.returnKeyType = .done
+        nameTextField.delegate = self
 
         view.addSubview(stackView)
         stackView.addArrangedSubview(nameLabel)
@@ -92,10 +101,27 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
             stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             stackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 8),
             stackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -8),
-            stackView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.heightAnchor)
+            stackView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.heightAnchor),
+            saveButton.heightAnchor.constraint(equalToConstant: 44)
         ])
 
         nameTextField.addTarget(self, action: #selector(fieldDidChange), for: .editingChanged)
+        saveButton.addTarget(self, action: #selector(saveButtonPressed), for: .touchUpInside)
+    }
+
+    private func setupInputAccessory() {
+        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneButtonTapped))
+        toolbar.setItems([flexibleSpace, doneButton], animated: true)
+        nameTextField.inputAccessoryView = toolbar
+        descriptionTextView.inputAccessoryView = toolbar
+    }
+
+    private func getFieldsData() -> TaskInfo {
+        return TaskInfo(
+            name: nameTextField.text ?? "",
+            description: descriptionTextView.text ?? ""
+        )
     }
 
     func updateSaveButtonState(isEnabled: Bool) {
@@ -103,6 +129,38 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
     }
 
     @objc func fieldDidChange() {
-        presenter.validateInput()
+        let inputData = getFieldsData()
+        presenter.validateInput(inputData: inputData)
+    }
+
+    @objc private func saveButtonPressed() {
+        let fieldsData = getFieldsData()
+        presenter.saveTask(with: fieldsData)
+    }
+
+    @objc private func doneButtonTapped() {
+        descriptionTextView.resignFirstResponder()
+    }
+}
+
+extension TaskDetailsViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        let inputData = getFieldsData()
+        presenter.validateInput(inputData: inputData)
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            textView.resignFirstResponder()
+            return false
+        }
+        return true
+    }
+}
+
+extension TaskDetailsViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }

@@ -7,14 +7,16 @@
 
 protocol TaskDetailsPresenterProtocol {
     func didLoad()
-    func validateInput()
+    func saveTask(with inputData: TaskInfo)
+    func validateInput(inputData: TaskInfo)
 }
 
 protocol TaskDetailsInteractorProtocol {
+    func saveTask(task: Task?, with: TaskInfo, completion: @escaping () -> Void)
 }
 
 protocol TaskDetailsRouterProtocol {
-
+    func popToRootVC()
 }
 
 protocol TaskDetailsViewControllerProtocol: AnyObject {

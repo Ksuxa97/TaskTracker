@@ -6,70 +6,90 @@
 //
 import Foundation
 
+// работа с очередями лучше только тут  добавить перезод на мейн тут
+//в конструктор передавать сервис с апи и сторедж: убрать синглтон
+
 final class TaskListInteractor: TaskListInteractorProtocol {
 
     private var tasks: [Task] = []
-    private let networkService: NetworkService
+    private let storage: StorageManagerProtocol
+    private let apiService: ApiServiceProtocol
 
-    init(networkService: NetworkService) {
-        self.networkService = networkService
+    init(storage: StorageManagerProtocol, apiService: ApiServiceProtocol) {
+        self.storage = storage
+        self.apiService = apiService
+    }
+
+    func deleteTask(_ task: Task, completion: @escaping ([Task]) -> Void) {
+        storage.delete(task) { [weak self] result in
+            guard let self else { return }
+            self.storage.fetchData { [weak self] result in
+                guard let self else { return }
+
+                switch result {
+                case .success(let taskList):
+                    self.tasks = taskList
+                case .failure(let error):
+                    print("Error: \(error)")
+                }
+
+                DispatchQueue.main.async {
+                    completion(self.tasks)
+                }
+            }
+        }
     }
 
     func loadTasks(completion: @escaping ([Task]) -> Void) {
+        if storage.isEmpty {
+            apiService.getToDoList() { [weak self] result in
+                guard let self else { return }
 
-        if StorageManager.shared.isEmpty() {
-            loadDataFromApi { result in
                 switch result {
-                case .success(let taskList):
-                    self.saveToCoreData(taskList: taskList.todos)
-                    self.loadFromCoreData() { taskList in
-                        completion(taskList)
-                    }
-
+                case .success(let todoList):
+                    self.saveToCoreData(taskList: todoList)
                 case .failure(let error):
                     print("Error: \(error)")
-                    completion([])
                 }
-                return
+
+                DispatchQueue.main.async {
+                    completion(self.tasks)
+                }
             }
         } else {
-            self.loadFromCoreData(){ taskList in
-                completion(taskList)
-            }
-        }
-    }
-    private func saveToCoreData(taskList: [ToDo]) {
-        taskList.forEach { item in
-            StorageManager.shared.create(item) { task in
-                self.tasks.append(task)
-            }
-        }
-    }
+            storage.fetchData { [weak self] result in
+                guard let self else { return }
 
-    private func loadDataFromApi(completion: @escaping (Result<ToDoListResponse, Error>) -> Void) {
-        guard let url = Endpoint.todos.url else {
-            completion(.failure(NetworkError.invalidURL))
-            return
-        }
-
-        networkService.request(url: url) { result in
-            switch result {
-                case .success(let response):
-                    completion(.success(response))
+                switch result {
+                case .success(let taskList):
+                    self.tasks = taskList
                 case .failure(let error):
-                    completion(.failure(error))
+                    print("Error: \(error)")
+                }
+
+                completion(self.tasks)
             }
         }
     }
 
-    private func loadFromCoreData(completion: @escaping ([Task]) -> Void) {
-        StorageManager.shared.fetchData { result in
+    func getTasks(with text: String, completion: @escaping ([Task]) -> Void) {
+        storage.getEntities(with: text) { [weak self] result in
+            guard let self else { return }
+
             switch result {
-            case .success(let data):
-                completion(data)
+            case .success(let taskList):
+                self.tasks = taskList
             case .failure(let error):
                 print("Error: \(error)")
-                completion([])
+            }
+            completion(self.tasks)
+        }
+    }
+
+    private func saveToCoreData(taskList: [ToDo]) {
+        taskList.forEach { item in
+            storage.create(item) { task in
+                self.tasks.append(task)
             }
         }
     }

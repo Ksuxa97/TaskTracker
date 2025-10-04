@@ -12,16 +12,19 @@ protocol TaskListPresenterProtocol {
     func updateTaskList()
     func didSelectTask(at index: Int)
     func addButtonDidTap()
+    func taskDidSwipe(with index: Int)
+    func searchTask(by searchText: String)
 }
 
 protocol TaskListInteractorProtocol {
     func loadTasks(completion: @escaping ([Task]) -> Void)
-    //func loadData(completion: @escaping (Result<ToDoListResponse, Error>) -> Void)
+    func deleteTask(_ task: Task, completion: @escaping ([Task]) -> Void)
+    func getTasks(with text: String, completion: @escaping ([Task]) -> Void)
 }
 
 protocol TaskListRouterProtocol {
-    func navigateToTaskDetails(from view: UIViewController, with task: Task?)
-    func navigateToCreateTask(from view: UIViewController)
+    func navigateToTaskDetails(with task: Task?)
+    func navigateToCreateTask()
 }
 
 protocol TaskListViewControllerProtocol: AnyObject {
@@ -30,6 +33,6 @@ protocol TaskListViewControllerProtocol: AnyObject {
     func hideLoading()
 }
 
-protocol TaskAddedDelegate {
-
+protocol TaskAddedDelegate: AnyObject {
+    func taskListDidChange()
 }

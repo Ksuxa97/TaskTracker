@@ -8,28 +8,34 @@ import UIKit
 
 final class TaskListRouter: TaskListRouterProtocol {
 
-    func navigateToTaskDetails(from view: UIViewController, with task: Task?) {
-        let TaskDetailsPresenter = TaskDetailsPresenter(for: task)
+    var view: TaskListViewControllerProtocol?
+
+    init(){
+    }
+
+    func navigateToTaskDetails(with task: Task?) {
+        let TaskDetailsRouter = TaskDetailsRouter()
+        let TaskDetailsInteractor = TaskDetailsInteractor(storage: StorageManager.shared)
+        let TaskDetailsPresenter = TaskDetailsPresenter(interactor: TaskDetailsInteractor, router: TaskDetailsRouter, for: task)
         let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter, title: "Редактирать задачу")
-        let TaskDetailsRouter = TaskDetailsRouter()
-        let TaskDetailsInteractor = TaskDetailsInteractor()
-        TaskDetailsPresenter.view = TaskDetailsVC
-        TaskDetailsPresenter.interactor = TaskDetailsInteractor
-        TaskDetailsPresenter.router = TaskDetailsRouter
 
-        view.navigationController?.pushViewController(TaskDetailsVC, animated: true)
+        TaskDetailsPresenter.view = TaskDetailsVC
+        TaskDetailsRouter.view = TaskDetailsVC
+
+        guard let taskListVC = view as? UIViewController else { return }
+        taskListVC.navigationController?.pushViewController(TaskDetailsVC, animated: true)
     }
 
-    func navigateToCreateTask(from view: UIViewController) {
-        let TaskDetailsPresenter = TaskDetailsPresenter()
+    func navigateToCreateTask() {
+        let TaskDetailsRouter = TaskDetailsRouter()
+        let TaskDetailsInteractor = TaskDetailsInteractor(storage: StorageManager.shared)
+        let TaskDetailsPresenter = TaskDetailsPresenter(interactor: TaskDetailsInteractor, router: TaskDetailsRouter)
         let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter, title: "Создать задачу")
-        let TaskDetailsRouter = TaskDetailsRouter()
-        let TaskDetailsInteractor = TaskDetailsInteractor()
+
         TaskDetailsPresenter.view = TaskDetailsVC
-        TaskDetailsPresenter.interactor = TaskDetailsInteractor
-        TaskDetailsPresenter.router = TaskDetailsRouter
+        TaskDetailsRouter.view = TaskDetailsVC
 
-        view.navigationController?.pushViewController(TaskDetailsVC, animated: true)
+        guard let taskListVC = view as? UIViewController else { return }
+        taskListVC.navigationController?.pushViewController(TaskDetailsVC, animated: true)
     }
-
 }
