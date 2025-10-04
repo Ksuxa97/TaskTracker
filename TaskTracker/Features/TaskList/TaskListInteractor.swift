@@ -6,9 +6,6 @@
 //
 import Foundation
 
-// работа с очередями лучше только тут  добавить перезод на мейн тут
-//в конструктор передавать сервис с апи и сторедж: убрать синглтон
-
 final class TaskListInteractor: TaskListInteractorProtocol {
 
     private var tasks: [Task] = []
@@ -29,12 +26,9 @@ final class TaskListInteractor: TaskListInteractorProtocol {
                 switch result {
                 case .success(let taskList):
                     self.tasks = taskList
+                    completion(self.tasks)
                 case .failure(let error):
                     print("Error: \(error)")
-                }
-
-                DispatchQueue.main.async {
-                    completion(self.tasks)
                 }
             }
         }
@@ -47,13 +41,11 @@ final class TaskListInteractor: TaskListInteractorProtocol {
 
                 switch result {
                 case .success(let todoList):
-                    self.saveToCoreData(taskList: todoList)
+                    self.saveToCoreData(taskList: todoList) {
+                        completion(self.tasks)
+                    }
                 case .failure(let error):
                     print("Error: \(error)")
-                }
-
-                DispatchQueue.main.async {
-                    completion(self.tasks)
                 }
             }
         } else {
@@ -66,7 +58,6 @@ final class TaskListInteractor: TaskListInteractorProtocol {
                 case .failure(let error):
                     print("Error: \(error)")
                 }
-
                 completion(self.tasks)
             }
         }
@@ -86,10 +77,28 @@ final class TaskListInteractor: TaskListInteractorProtocol {
         }
     }
 
-    private func saveToCoreData(taskList: [ToDo]) {
-        taskList.forEach { item in
-            storage.create(item) { task in
-                self.tasks.append(task)
+    private func saveToCoreData(taskList: [ToDo], completion: @escaping () -> Void) {
+        let group = DispatchGroup()
+
+        taskList.forEach { [weak self] item in
+            guard let self else { return }
+            group.enter()
+            self.storage.create(item) { _ in
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .global()) { [weak self] in
+            guard let self else { return }
+            self.storage.fetchData { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let tasks):
+                    self.tasks = tasks
+                case .failure(let error):
+                    print("Fetch after save failed:", error)
+                }
+                completion()
             }
         }
     }

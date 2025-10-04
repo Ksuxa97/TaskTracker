@@ -31,6 +31,7 @@ protocol TaskListViewControllerProtocol: AnyObject {
     func updateView()
     func showLoading()
     func hideLoading()
+    func deleteRow(at index: Int)
 }
 
 protocol TaskAddedDelegate: AnyObject {

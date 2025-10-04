@@ -52,7 +52,7 @@ final class TaskListPresenter: TaskListPresenterProtocol {
         interactor.deleteTask(tasks[index]) {[weak self] result in
             guard let self else { return }
             self.tasks = result
-            self.view?.updateView()
+            self.view?.deleteRow(at: index)
         }
     }
 

@@ -60,7 +60,6 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
         super.viewDidLoad()
         setupUI()
         setupLoadingView()
-        presenter.updateTaskList()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -132,7 +131,6 @@ extension TaskListViewController: UITableViewDelegate {
         let deleteAction = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
             guard let self else { return }
             self.presenter.taskDidSwipe(with: indexPath.row)
-            tableView.reloadData()
             completion(true)
         }
 
@@ -140,6 +138,12 @@ extension TaskListViewController: UITableViewDelegate {
         deleteAction.image = UIImage(systemName: "trash")
 
         return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
+
+    func deleteRow(at index: Int) {
+        tableView.performBatchUpdates {
+            tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
+        }
     }
 }
 

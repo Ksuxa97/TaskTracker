@@ -22,18 +22,6 @@ final class StorageManager: StorageManagerProtocol {
 
     static let shared = StorageManager()
 
-    var isEmpty: Bool {
-       (try? self.viewContext.count(for: TaskEntity.fetchRequest())) ?? 0 == 0
-    }
-
-    private lazy var lastID: Int64 = {
-        let fetchRequest: NSFetchRequest<TaskEntity> = TaskEntity.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        fetchRequest.fetchLimit = 1
-
-        return (try? viewContext.fetch(fetchRequest).first?.id) ?? 0
-    }()
-
     private let persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "TaskTracker")
         container.loadPersistentStores { _, error in
@@ -44,15 +32,28 @@ final class StorageManager: StorageManagerProtocol {
         return container
     }()
     private let viewContext: NSManagedObjectContext
-    private let backgroundContext: NSManagedObjectContext
+    private let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
 
     private init() {
         viewContext = persistentContainer.viewContext
-        persistentContainer.viewContext.automaticallyMergesChangesFromParent = true
+        viewContext.automaticallyMergesChangesFromParent = true
 
-        backgroundContext = persistentContainer.newBackgroundContext()
+        backgroundContext.parent = viewContext
         backgroundContext.automaticallyMergesChangesFromParent = true
         backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+    }
+
+    private lazy var lastID: Int64 = {
+        let fetchRequest: NSFetchRequest<TaskEntity> = TaskEntity.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        fetchRequest.fetchLimit = 1
+
+        return (try? viewContext.fetch(fetchRequest).first?.id) ?? 0
+    }()
+
+    var isEmpty: Bool {
+       (try? self.viewContext.count(for: TaskEntity.fetchRequest())) ?? 0 == 0
     }
 
     func fetchData(completion: @escaping (Result<[Task], Error>) -> Void) {
@@ -63,6 +64,7 @@ final class StorageManager: StorageManagerProtocol {
                 NSSortDescriptor(key: "isCompleted", ascending: true),
                 NSSortDescriptor(key: "createdAt", ascending: false)
             ]
+            backgroundContext.refreshAllObjects()
 
             do {
                 let entities = try backgroundContext.fetch(fetchRequest)
@@ -91,7 +93,12 @@ final class StorageManager: StorageManagerProtocol {
 
             do {
                 try backgroundContext.save()
-                completion(entity.toTask())
+                viewContext.performAndWait{
+                    try? self.viewContext.save()
+                    DispatchQueue.main.async {
+                        completion(entity.toTask())
+                    }
+                }
             } catch {
                 print("Ошибка обновления: \(error)")
             }
@@ -111,7 +118,12 @@ final class StorageManager: StorageManagerProtocol {
 
             do {
                 try backgroundContext.save()
-                completion()
+                viewContext.performAndWait{
+                    try? self.viewContext.save()
+                    DispatchQueue.main.async {
+                        completion()
+                    }
+                }
             } catch {
                 print("Ошибка обновления: \(error)")
             }
@@ -123,6 +135,7 @@ final class StorageManager: StorageManagerProtocol {
             guard let self else { return }
             let fetchRequest = TaskEntity.fetchRequest()
             fetchRequest.predicate = NSPredicate(format: "id == %d", task.id)
+            backgroundContext.refreshAllObjects()
 
             do {
                 guard let entity = try backgroundContext.fetch(fetchRequest).first else {
@@ -131,8 +144,11 @@ final class StorageManager: StorageManagerProtocol {
                 backgroundContext.delete(entity)
 
                 try backgroundContext.save()
-                DispatchQueue.main.async {
-                    completion(.success(()))
+                viewContext.performAndWait{
+                    try? self.viewContext.save()
+                    DispatchQueue.main.async {
+                        completion(.success(()))
+                    }
                 }
 
             } catch {
@@ -143,32 +159,24 @@ final class StorageManager: StorageManagerProtocol {
         }
     }
 
-    private func saveContext() {
-        if viewContext.hasChanges {
-            do {
-                try viewContext.save()
-            } catch {
-                let nserror = error as NSError
-                fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
-            }
-        }
-    }
-
     func update(task: Task, completion: @escaping (Result<Void, Error>) -> Void) {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
-            do {
-                let fetchRequest = TaskEntity.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "id == %d", task.id)
+            let fetchRequest = TaskEntity.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %d", task.id)
+            backgroundContext.refreshAllObjects()
 
+            do {
                 guard let entity = try backgroundContext.fetch(fetchRequest).first else {
                     return
                 }
                 entity.update(from: task)
                 try backgroundContext.save()
-
-                DispatchQueue.main.async {
-                    completion(.success(()))
+                viewContext.performAndWait{
+                    try? self.viewContext.save()
+                    DispatchQueue.main.async {
+                        completion(.success(()))
+                    }
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -192,6 +200,7 @@ final class StorageManager: StorageManagerProtocol {
                 NSSortDescriptor(key: "isCompleted", ascending: true),
                 NSSortDescriptor(key: "createdAt", ascending: false)
             ]
+            backgroundContext.refreshAllObjects()
 
             do {
                 let entities = try backgroundContext.fetch(fetchRequest)
