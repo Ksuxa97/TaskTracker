@@ -52,8 +52,6 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         return textView
     }()
 
-    private var toolbar = UIToolbar()
-
     private let saveButton: UIButton = {
         let button = UIButton(type: .roundedRect)
         button.backgroundColor = .systemBlue
@@ -69,7 +67,8 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         self.presenter = presenter
         super.init(nibName: nil, bundle: nil)
         self.title = title
-        setupInputAccessory()
+        nameTextField.inputAccessoryView = createToolbar()
+        descriptionTextView.inputAccessoryView = createToolbar()
     }
 
     required init?(coder: NSCoder) {
@@ -109,12 +108,15 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         saveButton.addTarget(self, action: #selector(saveButtonPressed), for: .touchUpInside)
     }
 
-    private func setupInputAccessory() {
+    private func createToolbar() -> UIToolbar {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+
         let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneButtonTapped))
-        toolbar.setItems([flexibleSpace, doneButton], animated: true)
-        nameTextField.inputAccessoryView = toolbar
-        descriptionTextView.inputAccessoryView = toolbar
+
+        toolbar.items = [flexibleSpace, doneButton]
+        return toolbar
     }
 
     private func getFieldsData() -> TaskInfo {

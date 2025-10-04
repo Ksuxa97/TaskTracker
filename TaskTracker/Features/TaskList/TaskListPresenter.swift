@@ -63,4 +63,15 @@ final class TaskListPresenter: TaskListPresenterProtocol {
             self.view?.updateView()
         }
     }
+
+    func toggleTaskCompletion(at index: Int) {
+        var task = tasks[index]
+        task = task.complete()
+
+        interactor.updateTaskState(task) { [weak self] in
+            guard let self else { return }
+            self.updateTaskList()
+        }
+    }
+
 }

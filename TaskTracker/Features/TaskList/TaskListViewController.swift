@@ -81,7 +81,7 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
 
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        tableView.register(TaskCell.self, forCellReuseIdentifier: TaskCell.reuseId)
 
         tableView.isUserInteractionEnabled = true
 
@@ -154,21 +154,13 @@ extension TaskListViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: TaskCell.reuseId, for: indexPath) as? TaskCell else {
+            return UITableViewCell()
+        }
         let item = presenter.getItem(with: indexPath.row)
-
-        let attributedString = NSMutableAttributedString()
-        let title = NSAttributedString(string: "\(item.name)\n", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .medium)])
-        let description = NSAttributedString(string: "\(item.description ?? "No description")\n", attributes: [.font: UIFont.systemFont(ofSize: 17, weight: .regular)])
-        let createdDate = NSAttributedString(string: "\(item.createdAt.formatted())\n", attributes: [.font: UIFont.systemFont(ofSize: 15, weight: .light)])
-        attributedString.append(title)
-        attributedString.append(description)
-        attributedString.append(createdDate)
-
-        var config = cell.defaultContentConfiguration()
-        config.attributedText = attributedString
-        config.secondaryTextProperties.numberOfLines = 0
-        cell.contentConfiguration = config
+        cell.configure(with: item) { [weak self] in
+            self?.presenter.toggleTaskCompletion(at: indexPath.row)
+        }
         return cell
     }
 
@@ -241,5 +233,6 @@ extension TaskListViewController: UISearchBarDelegate {
         searchBar.text = ""
         searchBar.resignFirstResponder()
         searchBar.setShowsCancelButton(false, animated: true)
+        presenter.updateTaskList()
     }
 }

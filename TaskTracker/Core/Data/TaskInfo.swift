@@ -28,4 +28,14 @@ struct Task {
             userId: userId,
             createdAt: createdAt)
     }
+
+    func complete() -> Task {
+        return Task(
+            id: id,
+            name: name,
+            description: description,
+            isCompleted: true,
+            userId: userId,
+            createdAt: createdAt)
+    }
 }

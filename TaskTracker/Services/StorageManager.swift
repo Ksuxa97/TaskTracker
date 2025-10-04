@@ -215,4 +215,12 @@ final class StorageManager: StorageManagerProtocol {
             }
         }
     }
+
+    private func saveParentContext() {
+        viewContext.performAndWait {
+            if viewContext.hasChanges {
+                try? viewContext.save()
+            }
+        }
+    }
 }

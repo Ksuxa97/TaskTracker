@@ -14,12 +14,14 @@ protocol TaskListPresenterProtocol {
     func addButtonDidTap()
     func taskDidSwipe(with index: Int)
     func searchTask(by searchText: String)
+    func toggleTaskCompletion(at index: Int)
 }
 
 protocol TaskListInteractorProtocol {
     func loadTasks(completion: @escaping ([Task]) -> Void)
     func deleteTask(_ task: Task, completion: @escaping ([Task]) -> Void)
     func getTasks(with text: String, completion: @escaping ([Task]) -> Void)
+    func updateTaskState(_ task: Task, completion: @escaping () -> Void)
 }
 
 protocol TaskListRouterProtocol {

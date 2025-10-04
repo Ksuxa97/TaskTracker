@@ -34,6 +34,12 @@ final class TaskListInteractor: TaskListInteractorProtocol {
         }
     }
 
+    func updateTaskState(_ task: Task, completion: @escaping () -> Void) {
+        storage.update(task: task) {_ in
+            completion()
+        }
+    }
+
     func loadTasks(completion: @escaping ([Task]) -> Void) {
         if storage.isEmpty {
             apiService.getToDoList() { [weak self] result in
