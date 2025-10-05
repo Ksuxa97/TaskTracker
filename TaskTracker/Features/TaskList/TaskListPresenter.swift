@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-final class TaskListPresenter: TaskListPresenterProtocol {
+final class TaskListPresenter: TaskListPresenterProtocol, TaskAddedDelegate {
 
     weak var view: TaskListViewControllerProtocol?
     var interactor: TaskListInteractorProtocol
@@ -48,7 +48,7 @@ final class TaskListPresenter: TaskListPresenterProtocol {
         router.navigateToCreateTask()
     }
 
-    func taskDidSwipe(with index: Int) {
+    func deleteTask(with index: Int) {
         interactor.deleteTask(tasks[index]) {[weak self] result in
             guard let self else { return }
             self.tasks = result
@@ -74,4 +74,7 @@ final class TaskListPresenter: TaskListPresenterProtocol {
         }
     }
 
+    func taskListDidChange() {
+        updateTaskList()
+    }
 }

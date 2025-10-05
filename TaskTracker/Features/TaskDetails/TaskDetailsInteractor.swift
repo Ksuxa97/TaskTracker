@@ -4,6 +4,7 @@
 //
 //  Created by Kseniya Semenova on 28.09.2025.
 //
+import Foundation
 
 final class TaskDetailsInteractor: TaskDetailsInteractorProtocol {
 
@@ -20,7 +21,15 @@ final class TaskDetailsInteractor: TaskDetailsInteractorProtocol {
                 completion()
             }
         } else {
-            storage.createTask(with: info) {
+            let task = Task(
+                id: Int.random(in: 1...Int.max),
+                name: info.name,
+                description: info.description,
+                isCompleted: false,
+                userId: Int.random(in: 1...Int.max),
+                createdAt: Date()
+            )
+            storage.create(task: task) {
                 completion()
             }
         }

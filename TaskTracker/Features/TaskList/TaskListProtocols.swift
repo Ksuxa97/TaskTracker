@@ -12,7 +12,7 @@ protocol TaskListPresenterProtocol {
     func updateTaskList()
     func didSelectTask(at index: Int)
     func addButtonDidTap()
-    func taskDidSwipe(with index: Int)
+    func deleteTask(with index: Int)
     func searchTask(by searchText: String)
     func toggleTaskCompletion(at index: Int)
 }

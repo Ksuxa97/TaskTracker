@@ -11,10 +11,10 @@ import Foundation
 protocol StorageManagerProtocol {
     var isEmpty: Bool { get }
     func fetchData(completion: @escaping (Result<[Task], Error>) -> Void)
-    func create(_ item: ToDo, completion: @escaping (Task) -> Void)
-    func createTask(with info: TaskInfo, completion: @escaping () -> Void)
+    func saveData(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void)
+    func create(task: Task, completion: @escaping () -> Void)
     func update(task: Task, completion: @escaping (Result<Void, Error>) -> Void)
-    func delete(_ task: Task, completion: @escaping (Result<Void, Error>) -> Void)
+    func delete(task: Task, completion: @escaping (Result<Void, Error>) -> Void)
     func getEntities(with text: String, completion: @escaping (Result<[Task], Error>) -> Void)
 }
 
@@ -80,41 +80,42 @@ final class StorageManager: StorageManagerProtocol {
         }
     }
 
-    func create(_ item: ToDo, completion: @escaping (Task) -> Void) {
-        backgroundContext.perform { [weak self] in
-            guard let self else { return }
-            let entity = TaskEntity(context: self.backgroundContext)
-            entity.id = Int64(item.id)
-            entity.name = item.todo
-            entity.taskDescription = ""
-            entity.isCompleted = item.completed
-            entity.userId = Int64(item.userId)
-            entity.createdAt = Date()
+    func saveData(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void) {
+        let group = DispatchGroup()
 
-            do {
-                try backgroundContext.save()
-                viewContext.performAndWait{
-                    try? self.viewContext.save()
-                    DispatchQueue.main.async {
-                        completion(entity.toTask())
-                    }
+        taskList.forEach { [weak self] task in
+            guard let self else { return }
+            group.enter()
+            create(task: task) {
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .global()) { [weak self] in
+            guard let self else { return }
+            fetchData { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let tasks):
+                    completion(.success(tasks))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
-            } catch {
-                print("Ошибка обновления: \(error)")
+
             }
         }
     }
 
-    func createTask(with info: TaskInfo, completion: @escaping () -> Void) {
+    func create(task: Task, completion: @escaping () -> Void) {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
             let entity = TaskEntity(context: backgroundContext)
-            entity.id = self.lastID + 1
-            entity.name = info.name
-            entity.taskDescription = info.description
-            entity.isCompleted = false
-            entity.userId = Int64.random(in: 1...Int64.max)
-            entity.createdAt = Date()
+            entity.id = Int64(task.id)
+            entity.name = task.name
+            entity.taskDescription = task.description
+            entity.isCompleted = task.isCompleted
+            entity.userId = Int64(task.userId)
+            entity.createdAt = task.createdAt
 
             do {
                 try backgroundContext.save()
@@ -130,7 +131,7 @@ final class StorageManager: StorageManagerProtocol {
         }
     }
 
-    func delete(_ task: Task, completion: @escaping (Result<Void, Error>) -> Void) {
+    func delete(task: Task, completion: @escaping (Result<Void, Error>) -> Void) {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
             let fetchRequest = TaskEntity.fetchRequest()

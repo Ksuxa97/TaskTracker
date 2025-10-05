@@ -8,10 +8,7 @@ import UIKit
 
 final class TaskDetailsRouter: TaskDetailsRouterProtocol {
 
-    var view: TaskDetailsViewControllerProtocol?
-
-    init(){
-    }
+    weak var view: TaskDetailsViewControllerProtocol?
 
     func popToRootVC() {
         guard let taskVC = view as? UIViewController else { return }

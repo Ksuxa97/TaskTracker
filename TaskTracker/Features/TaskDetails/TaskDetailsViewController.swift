@@ -31,6 +31,7 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         let textField = UITextField()
         textField.placeholder = "Введите название"
         textField.borderStyle = .roundedRect
+        textField.returnKeyType = .done
         return textField
     }()
 
@@ -67,8 +68,6 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         self.presenter = presenter
         super.init(nibName: nil, bundle: nil)
         self.title = title
-        nameTextField.inputAccessoryView = createToolbar()
-        descriptionTextView.inputAccessoryView = createToolbar()
     }
 
     required init?(coder: NSCoder) {
@@ -86,7 +85,6 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         nameTextField.text = taskName
         descriptionTextView.text = taskDescription
         descriptionTextView.delegate = self
-        nameTextField.returnKeyType = .done
         nameTextField.delegate = self
 
         view.addSubview(stackView)
@@ -108,17 +106,6 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         saveButton.addTarget(self, action: #selector(saveButtonPressed), for: .touchUpInside)
     }
 
-    private func createToolbar() -> UIToolbar {
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-
-        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneButtonTapped))
-
-        toolbar.items = [flexibleSpace, doneButton]
-        return toolbar
-    }
-
     private func getFieldsData() -> TaskInfo {
         return TaskInfo(
             name: nameTextField.text ?? "",
@@ -138,10 +125,6 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
     @objc private func saveButtonPressed() {
         let fieldsData = getFieldsData()
         presenter.saveTask(with: fieldsData)
-    }
-
-    @objc private func doneButtonTapped() {
-        descriptionTextView.resignFirstResponder()
     }
 }
 

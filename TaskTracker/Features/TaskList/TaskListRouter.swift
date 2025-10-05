@@ -8,10 +8,7 @@ import UIKit
 
 final class TaskListRouter: TaskListRouterProtocol {
 
-    var view: TaskListViewControllerProtocol?
-
-    init(){
-    }
+    weak var view: TaskListViewControllerProtocol?
 
     func navigateToTaskDetails(with task: Task?) {
         let TaskDetailsRouter = TaskDetailsRouter()

@@ -8,7 +8,7 @@
 import UIKit
 import CoreData
 
-final class TaskListViewController: UIViewController, TaskListViewControllerProtocol, TaskAddedDelegate {
+final class TaskListViewController: UIViewController, TaskListViewControllerProtocol {
 
     private let presenter: TaskListPresenterProtocol
 
@@ -130,7 +130,7 @@ extension TaskListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let deleteAction = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
             guard let self else { return }
-            self.presenter.taskDidSwipe(with: indexPath.row)
+            self.presenter.deleteTask(with: indexPath.row)
             completion(true)
         }
 
@@ -163,10 +163,6 @@ extension TaskListViewController: UITableViewDataSource {
         }
         return cell
     }
-
-    func taskListDidChange() {
-        presenter.updateTaskList()
-    }
 }
 
 // MARK: Loader
@@ -188,27 +184,19 @@ extension TaskListViewController {
     }
 
     func showLoading() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+        self.loadingView.isHidden = false
+        self.loadingIndicator.startAnimating()
 
-            self.loadingView.isHidden = false
-            self.loadingIndicator.startAnimating()
-
-            self.tableView.isUserInteractionEnabled = false
-            self.navigationItem.rightBarButtonItem?.isEnabled = false
-        }
+        self.tableView.isUserInteractionEnabled = false
+        self.navigationItem.rightBarButtonItem?.isEnabled = false
     }
 
     func hideLoading() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+        self.loadingIndicator.stopAnimating()
+        self.loadingView.isHidden = true
 
-            self.loadingIndicator.stopAnimating()
-            self.loadingView.isHidden = true
-            
-            self.tableView.isUserInteractionEnabled = true
-            self.navigationItem.rightBarButtonItem?.isEnabled = true
-        }
+        self.tableView.isUserInteractionEnabled = true
+        self.navigationItem.rightBarButtonItem?.isEnabled = true
     }
 }
 

@@ -8,7 +8,7 @@
 import Foundation
 
 protocol ApiServiceProtocol {
-    func getToDoList(completion: @escaping (Result<[ToDo], Error>) -> Void)
+    func getToDoList(completion: @escaping (Result<[Task], Error>) -> Void)
 }
 
 enum APIConstants {
@@ -41,7 +41,7 @@ final class DummyAPIService: ApiServiceProtocol {
         self.networkService = networkService
     }
 
-    func getToDoList(completion: @escaping (Result<[ToDo], Error>) -> Void) {
+    func getToDoList(completion: @escaping (Result<[Task], Error>) -> Void) {
         guard let url = Endpoint.todos.url else {
             completion(.failure(NetworkError.invalidURL))
             return
@@ -50,10 +50,28 @@ final class DummyAPIService: ApiServiceProtocol {
         networkService.request(url: url) { (result: Result<ToDoListResponse, Error>) in
             switch result {
                 case .success(let response):
-                    completion(.success(response.todos))
+                    let tasks = self.taskList(from: response.todos)
+                    completion(.success(tasks))
                 case .failure(let error):
                     completion(.failure(error))
             }
         }
     }
+
+    private func taskList(from todo: [ToDo]) -> [Task] {
+        var tasks: [Task] = []
+        todo.forEach { todo in
+            let task = Task(
+                id: todo.id,
+                name: todo.todo,
+                description: nil,
+                isCompleted: todo.completed,
+                userId: todo.userId,
+                createdAt: Date()
+            )
+            tasks.append(task)
+        }
+        return tasks
+    }
 }
+
