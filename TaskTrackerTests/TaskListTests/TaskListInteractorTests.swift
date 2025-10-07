@@ -21,13 +21,6 @@ final class TaskListInteractorTests: XCTestCase {
         interactor = TaskListInteractor(storage: mockStorage, apiService: mockApiService)
     }
 
-    override func tearDown() {
-        interactor = nil
-        mockStorage = nil
-        mockApiService = nil
-        super.tearDown()
-    }
-
     // MARK: - Tests
 
     func testLoadTasksFromAPIWhenStorageIsEmpty() {

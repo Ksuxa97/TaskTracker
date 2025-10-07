@@ -7,13 +7,17 @@
 
 import Foundation
 
+protocol NetworkServiceProtocol {
+    func request<T: Decodable>(url: URL, completion: @escaping (Result<T, Error>) -> Void)
+}
+
 enum NetworkError: Error {
     case invalidURL
     case invalidResponse
     case noDataFound
 }
 
-final class NetworkService {
+final class NetworkService: NetworkServiceProtocol {
     func request<T: Decodable>(url: URL, completion: @escaping (Result<T, Error>) -> Void) {
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {

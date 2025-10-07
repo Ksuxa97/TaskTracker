@@ -26,14 +26,24 @@ final class TaskDetailsPresenterTests: XCTestCase {
         presenter.view = view
     }
 
+    // MARK: - Tests
+    
     func testDidLoadCallsSetupUI() {
+        // when
         presenter.didLoad()
+
+        // then
         XCTAssertTrue(view.setupUICalled)
     }
 
     func testSaveTaskCreatesTask() {
+        // given
         let info = TaskInfo(name: "New Task", description: "Desc")
+
+        // when
         presenter.saveTask(with: info)
+
+        // then
         XCTAssertEqual(storage.tasks.count, 1)
         XCTAssertEqual(storage.tasks.first?.name, info.name)
     }

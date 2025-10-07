@@ -19,13 +19,9 @@ final class TaskDetailsInteractorTests: XCTestCase {
         interactor = TaskDetailsInteractor(storage: mockStorage)
     }
 
-    override func tearDown() {
-        interactor = nil
-        mockStorage = nil
-        super.tearDown()
-    }
+    // MARK: - Tests
 
-    func testSaveTaskCreatesNewTask() {
+    func testSaveTaskCreatesNewTask() throws {
         // given
         XCTAssertEqual(mockStorage.tasks.count, 0)
         let info = TaskInfo(name: "New Task", description: "Some description")
@@ -41,13 +37,13 @@ final class TaskDetailsInteractorTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertEqual(self.mockStorage.tasks.count, 1, "Должна быть создана новая задача")
-        let createdTask = self.mockStorage.tasks.first
-        XCTAssertEqual(createdTask?.name, info.name)
-        XCTAssertEqual(createdTask?.description, info.description)
-        XCTAssertFalse(createdTask?.isCompleted ?? true)
+        let createdTask = try XCTUnwrap(mockStorage.tasks.first)
+        XCTAssertEqual(createdTask.name, info.name)
+        XCTAssertEqual(createdTask.description, info.description)
+        XCTAssertFalse(createdTask.isCompleted)
     }
 
-    func testSaveTaskUpdatesExistingTask() {
+    func testSaveTaskUpdatesExistingTask() throws {
         // given
         let existingTask = TaskStubFactory.makeTask(name: "Old Name", description: "Old Desc")
         mockStorage.tasks = [existingTask]
@@ -64,12 +60,12 @@ final class TaskDetailsInteractorTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertEqual(self.mockStorage.tasks.count, 1, "Должна быть только одна задача")
-        let updated = self.mockStorage.tasks.first
-        XCTAssertEqual(updated?.name, "Updated Task")
-        XCTAssertEqual(updated?.description, "Updated description")
+        let updated = try XCTUnwrap(mockStorage.tasks.first)
+        XCTAssertEqual(updated.name, "Updated Task")
+        XCTAssertEqual(updated.description, "Updated description")
     }
 
-    func testSaveTaskDoesNotDuplicateWhenUpdatingTask() {
+    func testSaveTaskDoesNotDuplicateWhenUpdatingTask() throws {
         // given
         let task = TaskStubFactory.makeTask()
         mockStorage.tasks = [task]

@@ -26,6 +26,8 @@ final class TaskListPresenterTests: XCTestCase {
         presenter.view = view
     }
 
+    // MARK: - Tests
+
     func testUpdateTaskListTriggersViewUpdate() {
         storage.tasks = [Task(id: "1", name: "Task1", description: nil, isCompleted: false, userId: "u1", createdAt: Date())]
         presenter.updateTaskList()

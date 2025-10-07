@@ -34,12 +34,12 @@ enum Endpoint {
 
 final class ApiService: ApiServiceProtocol {
 
-    private let networkService: NetworkService
+    private let networkService: NetworkServiceProtocol
 
     private var limit = 30
     private var total = 0
 
-    init(networkService: NetworkService) {
+    init(networkService: NetworkServiceProtocol) {
         self.networkService = networkService
     }
 
