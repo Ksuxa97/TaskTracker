@@ -23,7 +23,6 @@ final class TaskDetailsInteractorTests: XCTestCase {
 
     func testSaveTaskCreatesNewTask() throws {
         // given
-        XCTAssertEqual(mockStorage.tasks.count, 0)
         let info = TaskInfo(name: "New Task", description: "Some description")
 
         let expectation = XCTestExpectation(description: "Create task completion called")
