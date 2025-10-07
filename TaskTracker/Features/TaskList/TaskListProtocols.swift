@@ -10,8 +10,9 @@ protocol TaskListPresenterProtocol {
     var numberOfItems: Int {get}
     func getItem(with index: Int) -> Task
     func updateTaskList()
-    func didSelectTask(at index: Int)
     func addButtonDidTap()
+    func editTask(with index: Int)
+    func shareTask(with index: Int)
     func deleteTask(with index: Int)
     func searchTask(by searchText: String)
     func toggleTaskCompletion(at index: Int)
@@ -33,7 +34,6 @@ protocol TaskListViewControllerProtocol: AnyObject {
     func updateView()
     func showLoading()
     func hideLoading()
-    func deleteRow(at index: Int)
 }
 
 protocol TaskAddedDelegate: AnyObject {

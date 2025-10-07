@@ -12,11 +12,11 @@ struct TaskInfo {
 }
 
 struct Task {
-    let id: Int
+    let id: String
     let name: String
     let description: String?
     let isCompleted: Bool
-    let userId: Int
+    let userId: String
     let createdAt: Date
 
     func update(with info: TaskInfo) -> Task {

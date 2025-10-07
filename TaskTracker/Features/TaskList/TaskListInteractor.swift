@@ -20,7 +20,7 @@ final class TaskListInteractor: TaskListInteractorProtocol {
     func deleteTask(_ task: Task, completion: @escaping ([Task]) -> Void) {
         storage.delete(task: task) { [weak self] result in
             guard let self else { return }
-            self.storage.fetchData { [weak self] result in
+            self.storage.fetch(query: nil) { [weak self] result in
                 guard let self else { return }
 
                 switch result {
@@ -42,12 +42,12 @@ final class TaskListInteractor: TaskListInteractorProtocol {
 
     func loadTasks(completion: @escaping ([Task]) -> Void) {
         if storage.isEmpty {
-            apiService.getToDoList() { [weak self] result in
+            apiService.getTaskList() { [weak self] result in
                 guard let self else { return }
 
                 switch result {
                 case .success(let tasks):
-                    self.storage.saveData(taskList: tasks) { result in
+                    self.storage.save(taskList: tasks) { result in
                         switch result {
                         case .success(let tasks):
                             completion(tasks)
@@ -61,7 +61,7 @@ final class TaskListInteractor: TaskListInteractorProtocol {
                 }
             }
         } else {
-            storage.fetchData { [weak self] result in
+            storage.fetch(query: nil) { [weak self] result in
                 guard let self else { return }
 
                 switch result {
@@ -76,7 +76,7 @@ final class TaskListInteractor: TaskListInteractorProtocol {
     }
 
     func getTasks(with text: String, completion: @escaping ([Task]) -> Void) {
-        storage.getEntities(with: text) { [weak self] result in
+        storage.fetch (query: text) { [weak self] result in
             guard let self else { return }
 
             switch result {

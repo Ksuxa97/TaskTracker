@@ -10,32 +10,33 @@ import Foundation
 
 protocol StorageManagerProtocol {
     var isEmpty: Bool { get }
-    func fetchData(completion: @escaping (Result<[Task], Error>) -> Void)
-    func saveData(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void)
+    func fetch(query: String?, completion: @escaping (Result<[Task], Error>) -> Void)
+    func save(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void)
     func create(task: Task, completion: @escaping () -> Void)
     func update(task: Task, completion: @escaping (Result<Void, Error>) -> Void)
     func delete(task: Task, completion: @escaping (Result<Void, Error>) -> Void)
-    func getEntities(with text: String, completion: @escaping (Result<[Task], Error>) -> Void)
 }
 
 final class StorageManager: StorageManagerProtocol {
 
     static let shared = StorageManager()
 
-    private let persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "TaskTracker")
-        container.loadPersistentStores { _, error in
-            if let error = error as NSError? {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
-            }
-        }
-        return container
-    }()
     private let viewContext: NSManagedObjectContext
     private let backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
 
     private init() {
-        viewContext = persistentContainer.viewContext
+        let container = NSPersistentContainer(name: "TaskTracker")
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            let description = NSPersistentStoreDescription()
+            description.type = NSInMemoryStoreType
+            container.persistentStoreDescriptions = [description]
+        }
+        container.loadPersistentStores { _, error in
+            if let error = error {
+                print("Core Data init failed: \(error)")
+            }
+        }
+        viewContext = container.viewContext
         viewContext.automaticallyMergesChangesFromParent = true
 
         backgroundContext.parent = viewContext
@@ -44,26 +45,22 @@ final class StorageManager: StorageManagerProtocol {
 
     }
 
-    private lazy var lastID: Int64 = {
-        let fetchRequest: NSFetchRequest<TaskEntity> = TaskEntity.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        fetchRequest.fetchLimit = 1
-
-        return (try? viewContext.fetch(fetchRequest).first?.id) ?? 0
-    }()
-
     var isEmpty: Bool {
        (try? self.viewContext.count(for: TaskEntity.fetchRequest())) ?? 0 == 0
     }
 
-    func fetchData(completion: @escaping (Result<[Task], Error>) -> Void) {
+    func fetch(query: String? = nil, completion: @escaping (Result<[Task], Error>) -> Void) {
         backgroundContext.perform { [weak self] in
+
             guard let self else { return }
             let fetchRequest = TaskEntity.fetchRequest()
-            fetchRequest.sortDescriptors = [
-                NSSortDescriptor(key: "isCompleted", ascending: true),
-                NSSortDescriptor(key: "createdAt", ascending: false)
-            ]
+
+            if let text = query {
+                fetchRequest.predicate = NSPredicate(
+                    format: "name CONTAINS[cd] %@ OR taskDescription CONTAINS[cd] %@",
+                    text, text
+                )
+            }
             backgroundContext.refreshAllObjects()
 
             do {
@@ -80,7 +77,7 @@ final class StorageManager: StorageManagerProtocol {
         }
     }
 
-    func saveData(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void) {
+    func save(taskList: [Task], completion: @escaping (Result<[Task], Error>) -> Void) {
         let group = DispatchGroup()
 
         taskList.forEach { [weak self] task in
@@ -93,8 +90,7 @@ final class StorageManager: StorageManagerProtocol {
 
         group.notify(queue: .global()) { [weak self] in
             guard let self else { return }
-            fetchData { [weak self] result in
-                guard let self else { return }
+            fetch { result in
                 switch result {
                 case .success(let tasks):
                     completion(.success(tasks))
@@ -110,11 +106,11 @@ final class StorageManager: StorageManagerProtocol {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
             let entity = TaskEntity(context: backgroundContext)
-            entity.id = Int64(task.id)
+            entity.id = task.id
             entity.name = task.name
             entity.taskDescription = task.description
             entity.isCompleted = task.isCompleted
-            entity.userId = Int64(task.userId)
+            entity.userId = task.userId
             entity.createdAt = task.createdAt
 
             do {
@@ -135,23 +131,22 @@ final class StorageManager: StorageManagerProtocol {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
             let fetchRequest = TaskEntity.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id == %d", task.id)
+            fetchRequest.predicate = NSPredicate(format: "id == %@", task.id)
             backgroundContext.refreshAllObjects()
 
             do {
                 guard let entity = try backgroundContext.fetch(fetchRequest).first else {
+                    print("Couldn't find task with such id")
                     return
                 }
                 backgroundContext.delete(entity)
 
                 try backgroundContext.save()
-                viewContext.performAndWait{
-                    try? self.viewContext.save()
+                saveParentContext() {
                     DispatchQueue.main.async {
                         completion(.success(()))
                     }
                 }
-
             } catch {
                 DispatchQueue.main.async {
                     completion(.failure(error))
@@ -164,17 +159,17 @@ final class StorageManager: StorageManagerProtocol {
         backgroundContext.perform { [weak self] in
             guard let self else { return }
             let fetchRequest = TaskEntity.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id == %d", task.id)
+            fetchRequest.predicate = NSPredicate(format: "id == %@", task.id)
             backgroundContext.refreshAllObjects()
 
             do {
                 guard let entity = try backgroundContext.fetch(fetchRequest).first else {
+                    print("Couldn't find task with such id")
                     return
                 }
                 entity.update(from: task)
                 try backgroundContext.save()
-                viewContext.performAndWait{
-                    try? self.viewContext.save()
+                saveParentContext() {
                     DispatchQueue.main.async {
                         completion(.success(()))
                     }
@@ -188,39 +183,11 @@ final class StorageManager: StorageManagerProtocol {
         }
     }
 
-    func getEntities(with text: String, completion: @escaping (Result<[Task], Error>) -> Void) {
-        backgroundContext.perform { [weak self] in
-            guard let self else { return }
-            let fetchRequest = TaskEntity.fetchRequest()
-            fetchRequest.predicate = NSPredicate(
-                format: "name CONTAINS[cd] %@ OR taskDescription CONTAINS[cd] %@",
-                text, text
-            )
-
-            fetchRequest.sortDescriptors = [
-                NSSortDescriptor(key: "isCompleted", ascending: true),
-                NSSortDescriptor(key: "createdAt", ascending: false)
-            ]
-            backgroundContext.refreshAllObjects()
-
-            do {
-                let entities = try backgroundContext.fetch(fetchRequest)
-                let tasks = entities.map { $0.toTask() }
-                DispatchQueue.main.async {
-                    completion(.success(tasks))
-                }
-            } catch let error {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-            }
-        }
-    }
-
-    private func saveParentContext() {
+    private func saveParentContext(completion: @escaping () -> Void) {
         viewContext.performAndWait {
             if viewContext.hasChanges {
                 try? viewContext.save()
+                completion()
             }
         }
     }

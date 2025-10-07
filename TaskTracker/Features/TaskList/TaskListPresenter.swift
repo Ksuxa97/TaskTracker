@@ -29,8 +29,12 @@ final class TaskListPresenter: TaskListPresenterProtocol, TaskAddedDelegate {
         return tasks[index]
     }
 
-    func didSelectTask(at index: Int) {
+    func editTask(with index: Int) {
         router.navigateToTaskDetails(with: tasks[index])
+    }
+
+    func shareTask(with index: Int) {
+        /// ToDo
     }
 
     func updateTaskList() {
@@ -45,14 +49,15 @@ final class TaskListPresenter: TaskListPresenterProtocol, TaskAddedDelegate {
     }
 
     func addButtonDidTap() {
-        router.navigateToCreateTask()
+        //router.navigateToCreateTask()
+        router.navigateToTaskDetails(with: nil)
     }
 
     func deleteTask(with index: Int) {
         interactor.deleteTask(tasks[index]) {[weak self] result in
             guard let self else { return }
             self.tasks = result
-            self.view?.deleteRow(at: index)
+            self.view?.updateView()
         }
     }
 

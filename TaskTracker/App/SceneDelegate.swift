@@ -17,7 +17,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         let taskListRouter = TaskListRouter()
         let networkService = NetworkService()
-        let apiService = DummyAPIService(networkService: networkService)
+        let apiService = ApiService(networkService: networkService)
         let taskListInteractor = TaskListInteractor(storage: StorageManager.shared, apiService: apiService)
 
         let taskListPresenter = TaskListPresenter(interactor: taskListInteractor, router: taskListRouter)

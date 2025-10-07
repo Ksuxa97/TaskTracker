@@ -10,11 +10,11 @@ import Foundation
 extension TaskEntity {
     func toTask() -> Task {
         return Task(
-            id: Int(self.id),
+            id: self.id ?? UUID().uuidString,
             name: self.name ?? "Без названия",
             description: self.taskDescription,
             isCompleted: self.isCompleted,
-            userId: Int(self.userId),
+            userId: self.userId ?? UUID().uuidString,
             createdAt: self.createdAt ?? Date()
         )
     }

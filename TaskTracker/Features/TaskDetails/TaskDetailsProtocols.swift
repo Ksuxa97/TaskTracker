@@ -8,7 +8,6 @@
 protocol TaskDetailsPresenterProtocol {
     func didLoad()
     func saveTask(with inputData: TaskInfo)
-    func validateInput(inputData: TaskInfo)
 }
 
 protocol TaskDetailsInteractorProtocol {
@@ -20,6 +19,6 @@ protocol TaskDetailsRouterProtocol {
 }
 
 protocol TaskDetailsViewControllerProtocol: AnyObject {
-    func setupUI(taskName: String, taskDescription: String)
-    func updateSaveButtonState(isEnabled: Bool)
+    func setupUI(task: Task?)
+    //func updateSaveButtonState(isEnabled: Bool)
 }

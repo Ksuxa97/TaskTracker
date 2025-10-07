@@ -11,6 +11,10 @@ struct ToDoListResponse: Codable {
     let total: Int
     let skip: Int
     let limit: Int
+
+    var hasMore: Bool {
+        return skip + limit < total
+    }
 }
 
 struct ToDo: Codable {

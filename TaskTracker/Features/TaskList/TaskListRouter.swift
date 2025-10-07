@@ -14,7 +14,7 @@ final class TaskListRouter: TaskListRouterProtocol {
         let TaskDetailsRouter = TaskDetailsRouter()
         let TaskDetailsInteractor = TaskDetailsInteractor(storage: StorageManager.shared)
         let TaskDetailsPresenter = TaskDetailsPresenter(interactor: TaskDetailsInteractor, router: TaskDetailsRouter, for: task)
-        let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter, title: "Редактирать задачу")
+        let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter)
 
         TaskDetailsPresenter.view = TaskDetailsVC
         TaskDetailsRouter.view = TaskDetailsVC
@@ -27,7 +27,7 @@ final class TaskListRouter: TaskListRouterProtocol {
         let TaskDetailsRouter = TaskDetailsRouter()
         let TaskDetailsInteractor = TaskDetailsInteractor(storage: StorageManager.shared)
         let TaskDetailsPresenter = TaskDetailsPresenter(interactor: TaskDetailsInteractor, router: TaskDetailsRouter)
-        let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter, title: "Создать задачу")
+        let TaskDetailsVC = TaskDetailsViewController(presenter: TaskDetailsPresenter)
 
         TaskDetailsPresenter.view = TaskDetailsVC
         TaskDetailsRouter.view = TaskDetailsVC

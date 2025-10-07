@@ -53,11 +53,6 @@
 			path = TaskTrackerTests;
 			sourceTree = "<group>";
 		};
-		714AD30A2E88050E005D1C88 /* TaskTrackerUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TaskTrackerUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,7 +85,6 @@
 			children = (
 				714AD2E62E88050A005D1C88 /* TaskTracker */,
 				714AD3002E88050E005D1C88 /* TaskTrackerTests */,
-				714AD30A2E88050E005D1C88 /* TaskTrackerUITests */,
 				714AD2E52E88050A005D1C88 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,9 +159,6 @@
 			);
 			dependencies = (
 				714AD3092E88050E005D1C88 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				714AD30A2E88050E005D1C88 /* TaskTrackerUITests */,
 			);
 			name = TaskTrackerUITests;
 			packageProductDependencies = (

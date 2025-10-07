@@ -22,11 +22,11 @@ final class TaskDetailsInteractor: TaskDetailsInteractorProtocol {
             }
         } else {
             let task = Task(
-                id: Int.random(in: 1...Int.max),
+                id: UUID().uuidString,
                 name: info.name,
                 description: info.description,
                 isCompleted: false,
-                userId: Int.random(in: 1...Int.max),
+                userId: UUID().uuidString,
                 createdAt: Date()
             )
             storage.create(task: task) {

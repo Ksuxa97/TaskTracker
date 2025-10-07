@@ -1,9 +1,11 @@
 //
-//  EditTaskPresenter.swift
+//  TaskDetailsPresenter.swift
 //  TaskTracker
 //
 //  Created by Kseniya Semenova on 28.09.2025.
 //
+
+import Foundation
 
 final class TaskDetailsPresenter: TaskDetailsPresenterProtocol {
     weak var view: TaskDetailsViewControllerProtocol?
@@ -25,7 +27,7 @@ final class TaskDetailsPresenter: TaskDetailsPresenterProtocol {
     }
 
     func didLoad() {
-        view?.setupUI(taskName: task?.name ?? "", taskDescription: task?.description ?? "")
+        view?.setupUI(task: task)
     }
 
     func saveTask(with inputData: TaskInfo) {
@@ -33,14 +35,5 @@ final class TaskDetailsPresenter: TaskDetailsPresenterProtocol {
             self.delegate?.taskListDidChange()
         }
         router.popToRootVC()
-    }
-
-    func validateInput(inputData: TaskInfo) {
-        let isInputDataChanged =
-            task?.name != inputData.name ||
-            task?.description != inputData.description
-
-        let isValid = !inputData.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        view?.updateSaveButtonState(isEnabled: isInputDataChanged && isValid)
     }
 }

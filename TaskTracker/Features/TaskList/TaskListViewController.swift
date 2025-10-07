@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import CoreData
 
 final class TaskListViewController: UIViewController, TaskListViewControllerProtocol {
 
@@ -14,21 +13,47 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
 
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
-        searchBar.searchTextField.backgroundColor = .systemBackground
-        searchBar.placeholder = "Поиск"
+        searchBar.placeholder = "Search"
         searchBar.searchBarStyle = .minimal
         searchBar.showsCancelButton = false
+        searchBar.tintColor = .systemYellow
+        searchBar.searchTextField.textColor = .white
+        searchBar.searchTextField.backgroundColor = .darkGray
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         return searchBar
     }()
 
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.backgroundColor = .black
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 80
-        tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
+    }()
+
+    private let bottomBar: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(white: 0.1, alpha: 1)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    private let taskCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 15, weight: .medium)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let addButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        button.tintColor = .systemYellow
+        return button
     }()
 
     private let loadingIndicator: UIActivityIndicatorView = {
@@ -47,6 +72,15 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
         return view
     }()
 
+    private let headerLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Задачи"
+        label.font = .systemFont(ofSize: 34, weight: .bold)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -58,6 +92,8 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+
         setupUI()
         setupLoadingView()
     }
@@ -69,46 +105,60 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
 
     func updateView() {
         tableView.reloadData()
+        taskCountLabel.text = "\(presenter.numberOfItems) Задач"
+        taskCountLabel.setNeedsLayout()
+        taskCountLabel.layoutIfNeeded()
     }
 
     // MARK: building List
     private func setupUI() {
-        title = "Список задач"
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .black
+        navigationItem.backBarButtonItem = UIBarButtonItem(title: "Назад")
+        navigationItem.backBarButtonItem?.tintColor = .systemYellow
 
         searchBar.delegate = self
-        view.addSubview(searchBar)
-
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(TaskCell.self, forCellReuseIdentifier: TaskCell.reuseId)
-
         tableView.isUserInteractionEnabled = true
 
+        view.addSubview(headerLabel)
+        view.addSubview(searchBar)
         view.addSubview(tableView)
+        view.addSubview(bottomBar)
+
+        bottomBar.addSubview(taskCountLabel)
+        bottomBar.addSubview(addButton)
+
+        addButton.addTarget(self, action: #selector(addButtonTapped), for: .touchUpInside)
 
         NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            headerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+
+            searchBar.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12),
             searchBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             searchBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             searchBar.heightAnchor.constraint(equalToConstant: 44),
+
+            bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bottomBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bottomBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bottomBar.heightAnchor.constraint(equalToConstant: 56),
+
             tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 20),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            tableView.bottomAnchor.constraint(equalTo: bottomBar.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+
+            taskCountLabel.centerXAnchor.constraint(equalTo: bottomBar.centerXAnchor),
+            taskCountLabel.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
+
+            addButton.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
+            addButton.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -20),
+            addButton.widthAnchor.constraint(equalToConstant: 28),
+            addButton.heightAnchor.constraint(equalToConstant: 28)
         ])
-
-        setupNavigationBar()
-    }
-
-    private func setupNavigationBar() {
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .add,
-            target: self,
-            action: #selector(addButtonTapped)
-        )
-        navigationItem.backButtonDisplayMode = .minimal
-        navigationItem.backButtonTitle = "" 
     }
 }
 
@@ -122,27 +172,20 @@ extension TaskListViewController {
 // MARK: TableView operations
 extension TaskListViewController: UITableViewDelegate {
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        presenter.didSelectTask(at: indexPath.row)
-    }
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath,
+                   point: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "square.and.pencil")) { _ in
+                self.presenter.editTask(with: indexPath.row)
+            }
+            let share = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                self.presenter.shareTask(with: indexPath.row)
+            }
+            let delete = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.presenter.deleteTask(with: indexPath.row)
+            }
 
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let deleteAction = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
-            guard let self else { return }
-            self.presenter.deleteTask(with: indexPath.row)
-            completion(true)
-        }
-
-        deleteAction.backgroundColor = .systemRed
-        deleteAction.image = UIImage(systemName: "trash")
-
-        return UISwipeActionsConfiguration(actions: [deleteAction])
-    }
-
-    func deleteRow(at index: Int) {
-        tableView.performBatchUpdates {
-            tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
+            return UIMenu(title: "", children: [edit, share, delete])
         }
     }
 }
@@ -161,6 +204,7 @@ extension TaskListViewController: UITableViewDataSource {
         cell.configure(with: item) { [weak self] in
             self?.presenter.toggleTaskCompletion(at: indexPath.row)
         }
+        
         return cell
     }
 }
@@ -173,10 +217,10 @@ extension TaskListViewController {
         loadingView.addSubview(loadingIndicator)
 
         NSLayoutConstraint.activate([
-            loadingView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            loadingView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            loadingView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            loadingView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            loadingView.topAnchor.constraint(equalTo: tableView.topAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: tableView.bottomAnchor),
+            loadingView.leadingAnchor.constraint(equalTo: tableView.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: tableView.trailingAnchor),
 
             loadingIndicator.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: loadingView.centerYAnchor, constant: -20)
