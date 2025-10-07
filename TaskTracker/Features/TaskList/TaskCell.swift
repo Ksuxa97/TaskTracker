@@ -57,6 +57,35 @@ final class TaskCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func configure(with task: Task, onToggle: @escaping () -> Void) {
+        toggleHandler = onToggle
+
+        let imageName = task.isCompleted ? "checkmark.circle.fill" : "circle"
+        checkboxButton.setImage(UIImage(systemName: imageName), for: .normal)
+        checkboxButton.tintColor = task.isCompleted ? .systemYellow : .systemGray3
+
+        titleLabel.text = task.name
+
+        if task.isCompleted {
+            let attributedTitle = NSMutableAttributedString(string: task.name)
+            attributedTitle.addAttribute(.strikethroughStyle,
+                                         value: NSUnderlineStyle.single.rawValue,
+                                         range: NSRange(location: 0, length: task.name.count))
+            titleLabel.attributedText = attributedTitle
+            titleLabel.textColor = .systemGray2
+            descriptionLabel.textColor = .systemGray
+        } else {
+            titleLabel.attributedText = nil
+            titleLabel.textColor = .white
+            titleLabel.text = task.name
+            descriptionLabel.textColor = .white
+        }
+
+        descriptionLabel.text = task.description?.isEmpty == false ? task.description : "Без описания"
+        dateLabel.textColor = .systemGray
+        dateLabel.text = DateFormatter.ddMMYY.string(from: task.createdAt)
+    }
+
     private func setupLayout() {
 
         contentView.addSubview(checkboxButton)
@@ -100,38 +129,5 @@ final class TaskCell: UITableViewCell {
         checkboxButton.setImage(UIImage(systemName: "circle"), for: .normal)
         checkboxButton.tintColor = .systemGray3
         toggleHandler = nil
-    }
-
-
-    func configure(with task: Task, onToggle: @escaping () -> Void) {
-        toggleHandler = onToggle
-
-        let imageName = task.isCompleted ? "checkmark.circle.fill" : "circle"
-        checkboxButton.setImage(UIImage(systemName: imageName), for: .normal)
-        checkboxButton.tintColor = task.isCompleted ? .systemYellow : .systemGray3
-
-        titleLabel.text = task.name
-
-        if task.isCompleted {
-            let attributedTitle = NSMutableAttributedString(string: task.name)
-            attributedTitle.addAttribute(.strikethroughStyle,
-                                         value: NSUnderlineStyle.single.rawValue,
-                                         range: NSRange(location: 0, length: task.name.count))
-            titleLabel.attributedText = attributedTitle
-            titleLabel.textColor = .systemGray2
-            descriptionLabel.textColor = .systemGray
-            //contentView.alpha = 0.7
-
-        } else {
-            titleLabel.attributedText = nil
-            titleLabel.textColor = .white
-            titleLabel.text = task.name
-            descriptionLabel.textColor = .white
-            //contentView.alpha = 1.0
-        }
-
-        descriptionLabel.text = task.description?.isEmpty == false ? task.description : "Без описания"
-        dateLabel.textColor = .systemGray
-        dateLabel.text = DateFormatter.ddMMYY.string(from: task.createdAt)
     }
 }

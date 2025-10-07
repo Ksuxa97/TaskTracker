@@ -92,8 +92,6 @@ final class TaskListViewController: UIViewController, TaskListViewControllerProt
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-
         setupUI()
         setupLoadingView()
     }
@@ -190,6 +188,7 @@ extension TaskListViewController: UITableViewDelegate {
     }
 }
 
+// MARK: Build Table
 extension TaskListViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

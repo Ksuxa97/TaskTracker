@@ -27,19 +27,27 @@ final class TaskListPresenterTests: XCTestCase {
     }
 
     // MARK: - Tests
-
     func testUpdateTaskListTriggersViewUpdate() {
+        // given
         storage.tasks = [Task(id: "1", name: "Task1", description: nil, isCompleted: false, userId: "u1", createdAt: Date())]
+
+        //when
         presenter.updateTaskList()
+
+        // then
         XCTAssertTrue(view.updateViewCalled)
     }
 
     func testToggleTaskCompletionMarksTaskCompleted() {
+        // given
         let task = Task(id: "1", name: "Task1", description: nil, isCompleted: false, userId: "u1", createdAt: Date())
         storage.tasks = [task]
         presenter.updateTaskList()
 
+        // when
         presenter.toggleTaskCompletion(at: 0)
+
+        //then
         XCTAssertTrue(storage.tasks.first?.isCompleted ?? false)
     }
 }

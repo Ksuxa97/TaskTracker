@@ -49,7 +49,6 @@ final class TaskListPresenter: TaskListPresenterProtocol, TaskAddedDelegate {
     }
 
     func addButtonDidTap() {
-        //router.navigateToCreateTask()
         router.navigateToTaskDetails(with: nil)
     }
 

@@ -8,7 +8,6 @@ import UIKit
 
 final class TaskDetailsViewController: UIViewController, TaskDetailsViewControllerProtocol {
 
-
     let presenter: TaskDetailsPresenterProtocol
 
     private let scrollView = UIScrollView()
@@ -130,6 +129,14 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
         toolbar.tintColor = .systemYellow
         descriptionTextView.inputAccessoryView = toolbar
     }
+}
+
+// MARK: Keyboard
+extension TaskDetailsViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
 
     private func setupKeyboardObservers() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)),
@@ -151,12 +158,5 @@ final class TaskDetailsViewController: UIViewController, TaskDetailsViewControll
 
     @objc private func doneButtonTapped() {
         descriptionTextView.resignFirstResponder()
-    }
-}
-
-extension TaskDetailsViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
     }
 }

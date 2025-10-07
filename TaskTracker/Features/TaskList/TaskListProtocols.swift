@@ -27,7 +27,6 @@ protocol TaskListInteractorProtocol {
 
 protocol TaskListRouterProtocol {
     func navigateToTaskDetails(with task: Task?)
-    func navigateToCreateTask()
 }
 
 protocol TaskListViewControllerProtocol: AnyObject {

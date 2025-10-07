@@ -61,6 +61,7 @@ final class StorageManager: StorageManagerProtocol {
                     text, text
                 )
             }
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
             backgroundContext.refreshAllObjects()
 
             do {

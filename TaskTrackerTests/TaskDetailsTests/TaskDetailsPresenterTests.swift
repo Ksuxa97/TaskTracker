@@ -27,7 +27,6 @@ final class TaskDetailsPresenterTests: XCTestCase {
     }
 
     // MARK: - Tests
-    
     func testDidLoadCallsSetupUI() {
         // when
         presenter.didLoad()

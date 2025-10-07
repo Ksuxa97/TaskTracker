@@ -38,6 +38,7 @@ final class ApiService: ApiServiceProtocol {
 
     private var limit = 30
     private var total = 0
+    private var encounteredError: Error? = nil
 
     init(networkService: NetworkServiceProtocol) {
         self.networkService = networkService
@@ -58,8 +59,7 @@ final class ApiService: ApiServiceProtocol {
                         allTasks.append(contentsOf: todos)
 
                     case .failure(let error):
-                        print("Couldn't fetch tasks: \(error)")
-                        completion(.failure(error))
+                        self.encounteredError = error
                     }
                     group.leave()
                 }
@@ -67,13 +67,17 @@ final class ApiService: ApiServiceProtocol {
             }
 
             group.notify(queue: .main) {
-                let tasks = self.taskList(from: allTasks)
-                completion(.success(tasks))
+                if let error = self.encounteredError {
+                    completion(.failure(error))
+                } else {
+                    let tasks = self.taskList(from: allTasks)
+                    completion(.success(tasks))
+                }
             }
         }
     }
 
-    func fetchTaskPage(skip: Int, completion: @escaping (Result<[ToDo], Error>) -> Void) {
+    private func fetchTaskPage(skip: Int, completion: @escaping (Result<[ToDo], Error>) -> Void) {
         guard let url = Endpoint.todos(skip: skip, limit: limit).url else {
             completion(.failure(NetworkError.invalidURL))
             return

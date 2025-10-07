@@ -20,7 +20,6 @@ final class TaskDetailsInteractorTests: XCTestCase {
     }
 
     // MARK: - Tests
-
     func testSaveTaskCreatesNewTask() throws {
         // given
         let info = TaskInfo(name: "New Task", description: "Some description")

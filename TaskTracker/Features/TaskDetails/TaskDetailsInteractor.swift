@@ -21,7 +21,7 @@ final class TaskDetailsInteractor: TaskDetailsInteractorProtocol {
                 completion()
             }
         } else {
-            let task = Task(
+            let newTask = Task(
                 id: UUID().uuidString,
                 name: info.name,
                 description: info.description,
@@ -29,7 +29,7 @@ final class TaskDetailsInteractor: TaskDetailsInteractorProtocol {
                 userId: UUID().uuidString,
                 createdAt: Date()
             )
-            storage.create(task: task) {
+            storage.create(task: newTask) {
                 completion()
             }
         }

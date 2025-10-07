@@ -20,5 +20,4 @@ protocol TaskDetailsRouterProtocol {
 
 protocol TaskDetailsViewControllerProtocol: AnyObject {
     func setupUI(task: Task?)
-    //func updateSaveButtonState(isEnabled: Bool)
 }

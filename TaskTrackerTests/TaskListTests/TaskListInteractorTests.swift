@@ -22,7 +22,6 @@ final class TaskListInteractorTests: XCTestCase {
     }
 
     // MARK: - Tests
-
     func testLoadTasksFromAPIWhenStorageIsEmpty() {
         // given
         mockStorage.isEmpty = true
